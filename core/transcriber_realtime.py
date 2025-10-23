@@ -1,35 +1,109 @@
+import os
+import pyaudio
+import webrtcvad
 import numpy as np
 from faster_whisper import WhisperModel
-from pydub import AudioSegment
+import json
+from datetime import datetime, timezone
+from core.listener_event_detector import detect_events_from_segment
 
-# Inicializa el modelo
-# Usa el modelo base 'small' para buena velocidad y calidad
-model = WhisperModel("small", device="cpu", compute_type="int8")
+SESSION_LOG_PATH = None
 
-def stream_transcribe_wav(path_wav: str, chunk_ms: int = 5000):
-    """
-    Simula transcripción en tiempo real dividiendo el audio en fragmentos.
-    Devuelve un generador que produce segmentos (texto, start, end) a medida que los obtiene.
-    """
-    audio = AudioSegment.from_wav(path_wav)
-    duration_ms = len(audio)
-    start_ms = 0
+RATE = 16000
+CHANNELS = 1
+FORMAT = pyaudio.paInt16
+FRAME_DURATION = 20  # menor duración → menor latencia
+FRAME_SIZE = int(RATE * FRAME_DURATION / 1000)
+VAD_SENSITIVITY = 2  # sensibilidad media
+SILENCE_LIMIT = 10  # número de frames (~0.6 s) de silencio para cortar
 
-    while start_ms < duration_ms:
-        end_ms = min(start_ms + chunk_ms, duration_ms)
-        chunk = audio[start_ms:end_ms]
+model = WhisperModel(
+    "tiny",
+    device="cuda" if os.getenv("USE_CUDA") == "1" else "cpu",
+    compute_type="int8"
+)
 
-        # Convertimos a numpy float32 mono
-        samples = np.array(chunk.get_array_of_samples()).astype(np.float32) / 32768.0
+def frame_generator(stream):
+    while True:
+        data = stream.read(FRAME_SIZE, exception_on_overflow=False)
+        if len(data) < FRAME_SIZE * 2:
+            continue
+        yield data
 
-        # Transcripción del fragmento
-        segments, _ = model.transcribe(samples, language="es", beam_size=1)
+def transcribe_frames(frames):
+    audio = np.frombuffer(b"".join(frames), np.int16).astype(np.float32) / 32768.0
+    segments, _ = model.transcribe(audio, beam_size=3, language="es")
+    return " ".join(seg.text.strip() for seg in segments).strip()
 
-        for seg in segments:
-            yield {
-                "start": seg.start + start_ms / 1000.0,
-                "end": seg.end + start_ms / 1000.0,
-                "text": seg.text.strip()
-            }
+def get_session_log_path(out_dir="data/logs"):
+    """Devuelve la ruta del archivo único de esta sesión."""
+    global SESSION_LOG_PATH
+    if SESSION_LOG_PATH is None:
+        base_dir = os.path.dirname(os.path.dirname(__file__))
+        logs_full = os.path.join(base_dir, out_dir)
+        os.makedirs(logs_full, exist_ok=True)
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        SESSION_LOG_PATH = os.path.join(logs_full, f"live_listener_{timestamp}.jsonl")
+    return SESSION_LOG_PATH
 
-        start_ms = end_ms
+
+def save_event(event):
+    """Guarda eventos en el mismo archivo durante toda la sesión."""
+    out_path = get_session_log_path()
+    with open(out_path, "a", encoding="utf-8") as f:
+        if isinstance(event, list):
+            for ev in event:
+                f.write(json.dumps(ev, ensure_ascii=False) + "\n")
+        else:
+            f.write(json.dumps(event, ensure_ascii=False) + "\n")
+
+def stream_with_vad():
+    p = pyaudio.PyAudio()
+    stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=1024)
+    vad = webrtcvad.Vad(VAD_SENSITIVITY)
+
+    print("Escuchando (Ctrl+C para detener)...")
+    voiced_frames, silence_frames, speaking = [], 0, False
+
+    try:
+        for frame in frame_generator(stream):
+            is_speech = vad.is_speech(frame, RATE)
+            print("voz" if is_speech else "silencio", end="\r")
+
+            if is_speech:
+                voiced_frames.append(frame)
+                silence_frames = 0
+                speaking = True
+            elif speaking:
+                silence_frames += 1
+                if silence_frames > SILENCE_LIMIT:
+                    speaking = False
+                    if voiced_frames:
+                        extra_padding = int(0.2 * RATE / (FRAME_SIZE / 2))
+                        voiced_frames.extend([b"\x00" * FRAME_SIZE] * extra_padding)
+
+                        print("\nTranscribiendo...")
+                        text = transcribe_frames(voiced_frames)
+                        voiced_frames = []
+                        silence_frames = 0
+                        print(f"Texto detectado: {text}")
+
+                        if text:
+                            event = detect_events_from_segment({
+                                "text": text
+                            })
+                            print(f"Evento detectado: {event}")
+                            if event:
+                                save_event(event)
+            else:
+                pass
+
+    except KeyboardInterrupt:
+        print("\nGrabación detenida.")
+    finally:
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
+
+if __name__ == "__main__":
+    stream_with_vad()

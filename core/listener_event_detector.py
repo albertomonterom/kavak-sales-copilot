@@ -19,33 +19,21 @@ prompt = ChatPromptTemplate.from_messages([
     ("system", LISTENER_PROMPT)
 ])
 
-def detect_events_from_segment(segment: Dict[str, Any]) -> List[Dict[str, Any]]:
+def detect_events_from_segment(segment: Dict[str, Any]) -> Dict[str, Any]:
     """
-        Envía un segmento transcrito al LLM (Listener) y devuelve una lista de eventos detectados.
+    Envía un fragmento transcrito al modelo y devuelve solo un dict con 'type' y 'text'.
     """
     text = segment.get("text", "").strip()
     if not text:
-        return []
+        return {"type": "other", "text": ""}
 
-    # Construir entrada
-    input_text = (
-        f"Texto: \"{text}\"\n"
-        f"Speaker: {segment.get('speaker', 'Desconocido')}\n"
-        f"Timestamp: {segment.get('start', 0.0)}"
-    )
-
+    input_text = f'Texto: "{text}"'
     chain = prompt | llm | parser
-    raw_response = chain.invoke({"input_text": input_text})
-    print("\n--- RAW RESPONSE ---")
-    print(raw_response)
-    print("--------------------\n")
-
 
     try:
-        events = json.loads(raw_response)
-        if isinstance(events, dict):
-            events = [events]
-        return events
+        raw = chain.invoke({"input_text": input_text}).strip()
+        event = json.loads(raw)
+        return event
     except Exception as e:
-        print(f"Error al parsear JSON para segmento: {text[:50]}... -> {e}")
-        return []
+        print(f"[WARN] Error parseando para '{text[:40]}...': {e}")
+        return {"type": "other", "text": text}
