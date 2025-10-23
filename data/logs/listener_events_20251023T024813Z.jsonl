@@ -1,0 +1,6 @@
+{"type": "interest_detected", "speaker": "Cliente", "text": "Estoy interesado en el Mazda 3 2020, ¿lo tienen disponible?", "timestamp": 0.0, "confidence": 0.95}
+{"type": "other", "speaker": "Agente", "text": "¿prefiere automático o estándar y cuál es su presupuesto?", "timestamp": 6.0, "confidence": 0.85}
+{"type": "pricing_question", "speaker": "Cliente", "text": "¿en cuánto sale más o menos?", "timestamp": 11.0, "confidence": 0.95}
+{"type": "financing_question", "speaker": "Agente", "text": "¿podemos ver financiamiento?", "timestamp": 14.0, "confidence": 0.95}
+{"type": "objection_detected", "speaker": "Cliente", "text": "Se me hace un poco alto, ¿hay promociones?", "timestamp": 19.0, "confidence": 0.93}
+{"type": "financing_question", "speaker": "Agente", "text": "Vemos mensualidades con enganche bajo.", "timestamp": 22.0, "confidence": 0.95}

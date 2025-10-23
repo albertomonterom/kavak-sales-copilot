@@ -1,25 +1,29 @@
-openai>=1.43.0
-pydub>=0.25.1
-python-dotenv>=1.0.1
+# openai>=1.43.0
+# pydub>=0.25.1
+# python-dotenv>=1.0.1
 
 # --- Procesamiento de audio ---
 # webrtcvad requiere herramientas de compilación de C++ en Windows:
 # 1. Descargar: https://visualstudio.microsoft.com/visual-cpp-build-tools/
 # 2. Instalar "Desarrollo de escritorio con C++"
 # 3. Incluir el componente "MSVC v143 - VS 2022 C++ x64/x86 build tools"
-webrtcvad>=2.0.10
+# webrtcvad>=2.0.10
 
 # --- Dependencias del sistema (manual) ---
 # ffmpeg debe estar instalado para la decodificación de audio (MP3, MP4, etc.)
 # Windows: choco install ffmpeg
-"""
-1. Si no tienes Chocolatey instalado, ejecuta este comando en PowerShell como Administrador:
-    Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-2. Luego, instala ffmpeg con:
-    choco install ffmpeg -y
-3. Luego verifica la instalación con:
-    ffmpeg -version
-4. Agregar ffmpeg al PATH del sistema si no se agregó automáticamente.
-    C:\ProgramData\chocolatey\lib\ffmpeg\tools\ffmpeg\bin
-"""
+
+# 1. Si no tienes Chocolatey instalado, ejecuta este comando en PowerShell como Administrador:
+#     Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+# 2. Luego, instala ffmpeg con:
+#     choco install ffmpeg -y
+# 3. Luego verifica la instalación con:
+#     ffmpeg -version
+# 4. Agregar ffmpeg al PATH del sistema si no se agregó automáticamente.
+#     C:\ProgramData\chocolatey\lib\ffmpeg\tools\ffmpeg\bin
+
 # Linux/WSL: sudo apt install ffmpeg -y
+
+faster-whisper==1.0.3
+sounddevice==0.4.7
+numpy==1.26.4

@@ -40,7 +40,7 @@ def transcribe_wav_verbose(path_wav: str) -> List[Dict]:
     return segments
 
 # transcribe_wav_verbose("data/audio/demo.wav")
-segments = transcribe_wav_verbose("data/audio/demo.wav")  # --- IGNORE ---
-print("Transcripción detallada:")  # --- IGNORE ---
-for segment in segments:  # --- IGNORE ---
-    print(segment)  # --- IGNORE ---
+# segments = transcribe_wav_verbose("data/audio/demo.wav")  # --- IGNORE ---
+# print("Transcripción detallada:")  # --- IGNORE ---
+# for segment in segments:  # --- IGNORE ---
+#     print(segment)  # --- IGNORE ---

@@ -1,0 +1,4 @@
+{"type": "greeting", "speaker": "Cliente", "text": "Hola, estoy interesado en el Mazda 3 2020, ¿lo tienen disponible?", "timestamp": 0.0, "confidence": 0.95}
+{"type": "interest_detected", "speaker": "Cliente", "text": "estoy interesado en el Mazda 3 2020", "timestamp": 0.0, "confidence": 0.95}
+{"type": "pricing_question", "speaker": "Cliente", "text": "Aprox $280,000, ¿podemos ver financiamiento?", "timestamp": 14.0, "confidence": 0.95}
+{"type": "financing_question", "speaker": "Cliente", "text": "¿podemos ver financiamiento?", "timestamp": 14.0, "confidence": 0.95}
